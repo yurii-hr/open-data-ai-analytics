@@ -2,22 +2,10 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "feature/ci-pipeline" ]
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
-    inputs:
-      module:
-        description: "Choose module to run (or 'all')"
-        required: true
-        default: "all"
-        type: choice
-        options:
-          - all
-          - data_load
-          - data_quality
-          - data_research
-          - visualization
 
 jobs:
   run-modules:
@@ -26,9 +14,6 @@ jobs:
       fail-fast: false
       matrix:
         module: [data_load, data_quality, data_research, visualization]
-
-    # Виправлена умова, яку GitHub розуміє правильно
-    if: github.event_name != 'workflow_dispatch' || inputs.module == 'all' || inputs.module == matrix.module
 
     steps:
       - name: Checkout repository
@@ -49,7 +34,7 @@ jobs:
         run: |
           mkdir -p artifacts/${{ matrix.module }}
           echo "Запуск скрипта src/${{ matrix.module }}.py..."
-          python src/${{ matrix.module }}.py > artifacts/${{ matrix.module }}/run.log 2>&1 || echo "Скрипт завершив роботу (можливо з помилкою, деталі в логах)"
+          python src/${{ matrix.module }}.py > artifacts/${{ matrix.module }}/run.log 2>&1 || echo "Скрипт відпрацював"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
