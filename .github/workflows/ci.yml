@@ -6,6 +6,18 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
+    inputs:
+      module:
+        description: "Оберіть модуль для запуску"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - data_load
+          - data_quality
+          - data_research
+          - visualization
 
 jobs:
   run-modules:
@@ -14,6 +26,11 @@ jobs:
       fail-fast: false
       matrix:
         module: [data_load, data_quality, data_research, visualization]
+
+    if: |
+      github.event_name != 'workflow_dispatch' || 
+      github.event.inputs.module == 'all' || 
+      github.event.inputs.module == matrix.module
 
     steps:
       - name: Checkout repository
@@ -33,7 +50,7 @@ jobs:
         run: |
           mkdir -p artifacts/${{ matrix.module }}
           echo "Запуск скрипта src/${{ matrix.module }}.py..."
-          python src/${{ matrix.module }}.py > artifacts/${{ matrix.module }}/run.log 2>&1 || echo "Скрипт відпрацював"
+          python src/${{ matrix.module }}.py > artifacts/${{ matrix.module }}/run.log 2>&1 || echo "Завершено"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
