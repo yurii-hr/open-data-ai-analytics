@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       module:
-        description: "Оберіть модуль для запуску"
+        description: "Select module to run"
         required: true
         default: "all"
         type: choice
@@ -49,8 +49,8 @@ jobs:
       - name: Run module
         run: |
           mkdir -p artifacts/${{ matrix.module }}
-          echo "Запуск скрипта src/${{ matrix.module }}.py..."
-          python src/${{ matrix.module }}.py > artifacts/${{ matrix.module }}/run.log 2>&1 || echo "Завершено"
+          echo "Running script src/${{ matrix.module }}.py..."
+          python src/${{ matrix.module }}.py > artifacts/${{ matrix.module }}/run.log 2>&1 || echo "Finished"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
