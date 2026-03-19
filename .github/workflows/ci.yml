@@ -6,15 +6,41 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
+    inputs:
+      module:
+        description: "Select module to run"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - data_load
+          - data_quality
+          - data_research
+          - visualization
 
 jobs:
+  set-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.module }}" != "all" ]; then
+            echo "matrix=[\"${{ github.event.inputs.module }}\"]" >> $GITHUB_OUTPUT
+          else
+            echo 'matrix=["data_load","data_quality","data_research","visualization"]' >> $GITHUB_OUTPUT
+          fi
+
   run-modules:
+    needs: set-matrix
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        module: [data_load, data_quality, data_research, visualization]
-
+        module: ${{ fromJson(needs.set-matrix.outputs.matrix) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,6 +50,14 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -32,10 +66,11 @@ jobs:
       - name: Run module
         run: |
           mkdir -p artifacts/${{ matrix.module }}
-          echo "Запуск скрипта src/${{ matrix.module }}.py..."
-          python src/${{ matrix.module }}.py > artifacts/${{ matrix.module }}/run.log 2>&1 || echo "Скрипт відпрацював"
+          echo "Running script src/${{ matrix.module }}.py..."
+          python src/${{ matrix.module }}.py > artifacts/${{ matrix.module }}/run.log 2>&1
 
-      - name: Upload Artifacts
+      - name: Upload artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: logs-${{ matrix.module }}
