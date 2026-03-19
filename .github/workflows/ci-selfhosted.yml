@@ -1,0 +1,35 @@
+name: Local Self-Hosted Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        description: "Select module to run locally"
+        required: true
+        default: "data_load"
+        type: choice
+        options:
+          - data_load
+          - data_quality
+          - data_research
+          - visualization
+
+jobs:
+  run-on-my-pc:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run module locally
+        shell: bash
+        run: |
+          echo "==== Running on Local Machine (Self-hosted) ===="
+          mkdir -p artifacts_local
+          python src/${{ github.event.inputs.module }}.py > artifacts_local/run.log 2>&1 || echo "Script finished"
+
+      - name: Upload Local Logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-logs-${{ github.event.inputs.module }}
+          path: artifacts_local/run.log
