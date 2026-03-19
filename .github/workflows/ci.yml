@@ -75,3 +75,50 @@ jobs:
         with:
           name: logs-${{ matrix.module }}
           path: artifacts/${{ matrix.module }}
+
+  deploy-pages:
+    needs: run-modules
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+      
+    steps:
+      - name: Download visualization artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: logs-visualization
+          path: public
+        continue-on-error: true
+
+      - name: Create index.html if not exists
+        run: |
+          mkdir -p public
+          if [ ! -f public/index.html ]; then
+            echo "<!DOCTYPE html><html><head><meta charset='utf-8'><title>CI/CD Visualization</title></head><body>" > public/index.html
+            echo "<h1>Visualization Module Results</h1>" >> public/index.html
+            echo "<p>This is an automatically generated CI/CD Pipeline page (Part B - Option 2).</p>" >> public/index.html
+            echo "<h2>Execution Log (run.log):</h2>" >> public/index.html
+            echo "<pre>" >> public/index.html
+            cat public/run.log 2>/dev/null || echo "Log unavailable" >> public/index.html
+            echo "</pre></body></html>" >> public/index.html
+          fi
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'public'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
