@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  data_load:
+    build: ./data_load
+    container_name: transit_data_load
+    volumes:
+      - ./data:/app/data          
+      - db_volume:/app/db_data 
+    networks:
+      - transit_network
+
+  data_quality:
+    build: ./data_quality_analysis
+    container_name: transit_data_quality
+    depends_on:
+      data_load:
+        condition: service_completed_successfully
+    volumes:
+      - db_volume:/app/db_data
+      - reports_volume:/app/shared_reports
+    networks:
+      - transit_network
+
+  data_research:
+    build: ./data_research
+    container_name: transit_data_research
+    depends_on:
+      data_load:
+        condition: service_completed_successfully
+    volumes:
+      - db_volume:/app/db_data
+      - reports_volume:/app/shared_reports
+    networks:
+      - transit_network
+
+  visualization:
+    build: ./visualization
+    container_name: transit_visualization
+    depends_on:
+      data_research:
+        condition: service_completed_successfully
+    volumes:
+      - db_volume:/app/db_data
+      - reports_volume:/app/shared_reports
+    networks:
+      - transit_network
+
+  web:
+    build: ./web
+    container_name: transit_web
+    ports:
+      - "8000:8000"
+    depends_on:
+      visualization:
+        condition: service_completed_successfully
+    volumes:
+      - reports_volume:/app/shared_reports
+    networks:
+      - transit_network
+
+volumes:
+  db_volume:
+  reports_volume:
+
+networks:
+  transit_network:
+    driver: bridge
