@@ -50,7 +50,7 @@ services:
     build: ./web
     container_name: transit_web
     ports:
-      - "8000:8000"
+      - "${WEB_PORT:-8000}:8000"
     depends_on:
       visualization:
         condition: service_completed_successfully
@@ -58,6 +58,11 @@ services:
       - reports_volume:/app/shared_reports
     networks:
       - transit_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   db_volume:
