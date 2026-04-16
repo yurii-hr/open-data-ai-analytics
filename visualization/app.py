@@ -83,41 +83,56 @@ def visualize_all():
         plt.savefig(f'{output_dir}/cities_bar.png', dpi=300)
         plt.close()
 
+
+    try:
+        with open('/app/shared_reports/quality_report.txt', 'r', encoding='utf-8') as f:
+            quality_text = f.read()
+        with open('/app/shared_reports/research_report.txt', 'r', encoding='utf-8') as f:
+            research_text = f.read()
+    except FileNotFoundError:
+        quality_text = "Звіт про якість ще формується..."
+        research_text = "Звіт про дослідження ще формується..."
+
     html_content = f"""
     <!DOCTYPE html>
-    <html>
+    <html lang="uk">
     <head>
         <title>Аналіз транспортної системи Львова</title>
         <meta charset="UTF-8">
         <style>
             body {{ font-family: Arial, sans-serif; margin: 40px; background: #f4f4f4; }}
             .container {{ background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-            h1 {{ color: #333; }}
+            h1, h2 {{ color: #333; }}
             .chart {{ margin-bottom: 40px; text-align: center; }}
             img {{ max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; }}
-            .report-text {{ background: #eee; padding: 15px; border-radius: 5px; white-space: pre-wrap; text-align: left; font-family: monospace; }}
+            pre {{ background: #eee; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: monospace; }}
         </style>
     </head>
     <body>
         <div class="container">
- 
+            <h1>Результати аналізу транспортних зупинок</h1>
+            
+            <h2>1. Перевірка якості даних</h2>
+            <pre>{quality_text}</pre>
+            
+            <h2>2. Дослідження та статистики</h2>
+            <pre>{research_text}</pre>
+            
+            <h2>3. Візуалізації</h2>
             <div class="chart">
-                <h3>K-Means Clustering</h3>
+                <h3>K-Means Кластеризація</h3>
                 <img src="kmeans_map.png" alt="K-Means">
             </div>
-            
             <div class="chart">
-                <h3>DBSCAN Hub Identification</h3>
+                <h3>DBSCAN (Транспортні вузли)</h3>
                 <img src="dbscan_map.png" alt="DBSCAN">
             </div>
-            
             <div class="chart">
-                <h3>Top Streets</h3>
+                <h3>ТОП-10 Вулиць</h3>
                 <img src="streets_bar.png" alt="Streets">
             </div>
-
             <div class="chart">
-                <h3>Settlement Distribution</h3>
+                <h3>Розподіл за населеними пунктами</h3>
                 <img src="cities_bar.png" alt="Settlements">
             </div>
         </div>
