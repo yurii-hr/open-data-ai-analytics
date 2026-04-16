@@ -112,13 +112,13 @@ def visualize_all():
         <div class="container">
             <h1>Результати аналізу транспортних зупинок</h1>
             
-            <h2>1. Перевірка якості даних</h2>
+            <h2>Перевірка якості даних</h2>
             <pre>{quality_text}</pre>
             
-            <h2>2. Дослідження та статистики</h2>
+            <h2>Дослідження та статистики</h2>
             <pre>{research_text}</pre>
             
-            <h2>3. Візуалізації</h2>
+            <h2>Візуалізації</h2>
             <div class="chart">
                 <h3>K-Means Кластеризація</h3>
                 <img src="kmeans_map.png" alt="K-Means">
