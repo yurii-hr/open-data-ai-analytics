@@ -5,24 +5,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.cluster import KMeans, DBSCAN
+import sqlite3
 import os
 
 def visualize_all():
-    file_path = 'data/raw/stops_lviv.csv'
-    output_dir = 'artifacts/visualization'
+    db_path = '/app/db_data/lab.db'
+    output_dir = '/app/shared_reports'
     os.makedirs(output_dir, exist_ok=True)
     
     sns.set_style("whitegrid")
     plt.rcParams['figure.figsize'] = (12, 8)
 
-    if not os.path.exists(file_path):
-        print(f"Error: Data file {file_path} not found.")
+    if not os.path.exists(db_path):
+        print(f"Помилка: Базу даних {db_path} не знайдено.")
         return
 
-    df = pd.read_csv(file_path)
-    coords = df[['lat', 'lon']].dropna()
-    print(f"Data loaded successfully. Total points: {len(coords)}")
+    conn = sqlite3.connect(db_path)
+    df = pd.read_sql_query("SELECT * FROM stops", conn)
+    conn.close()
 
+    coords = df[['lat', 'lon']].dropna()
+    print(f"Дані успішно завантажено. Всього точок: {len(coords)}")
+
+    print("Генеруємо графік K-Means...")
     kmeans = KMeans(n_clusters=6, random_state=42, n_init=10)
     labels_kmeans = kmeans.fit_predict(coords)
     
@@ -36,6 +41,7 @@ def visualize_all():
     plt.savefig(f'{output_dir}/kmeans_map.png', dpi=300)
     plt.close()
 
+    print("Генеруємо графік DBSCAN...")
     dbscan = DBSCAN(eps=0.005, min_samples=3)
     labels_db = dbscan.fit_predict(coords)
     
@@ -55,6 +61,7 @@ def visualize_all():
     plt.savefig(f'{output_dir}/dbscan_map.png', dpi=300)
     plt.close()
 
+    print("Генеруємо графік вулиць...")
     if 'addressThoroughfare' in df.columns:
         top_streets = df['addressThoroughfare'].value_counts().head(10)
         plt.figure(figsize=(12, 6))
@@ -65,6 +72,7 @@ def visualize_all():
         plt.savefig(f'{output_dir}/streets_bar.png', dpi=300)
         plt.close()
 
+    print("Генеруємо графік населених пунктів...")
     if 'addressPostName' in df.columns:
         top_cities = df['addressPostName'].value_counts().head(10)
         plt.figure(figsize=(12, 6))
@@ -75,41 +83,56 @@ def visualize_all():
         plt.savefig(f'{output_dir}/cities_bar.png', dpi=300)
         plt.close()
 
+
+    try:
+        with open('/app/shared_reports/quality_report.txt', 'r', encoding='utf-8') as f:
+            quality_text = f.read()
+        with open('/app/shared_reports/research_report.txt', 'r', encoding='utf-8') as f:
+            research_text = f.read()
+    except FileNotFoundError:
+        quality_text = "Звіт про якість ще формується..."
+        research_text = "Звіт про дослідження ще формується..."
+
     html_content = f"""
     <!DOCTYPE html>
-    <html>
+    <html lang="uk">
     <head>
-        <title>Lviv Transit Analysis Report</title>
+        <title>Аналіз транспортної системи Львова</title>
+        <meta charset="UTF-8">
         <style>
             body {{ font-family: Arial, sans-serif; margin: 40px; background: #f4f4f4; }}
             .container {{ background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-            h1 {{ color: #333; }}
+            h1, h2 {{ color: #333; }}
             .chart {{ margin-bottom: 40px; text-align: center; }}
             img {{ max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; }}
+            pre {{ background: #eee; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: monospace; }}
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>Lviv Transit System Data Analysis</h1>
-            <p>Generated automatically via CI/CD Pipeline.</p>
+            <h1>Результати аналізу транспортних зупинок</h1>
             
+            <h2>Перевірка якості даних</h2>
+            <pre>{quality_text}</pre>
+            
+            <h2>Дослідження та статистики</h2>
+            <pre>{research_text}</pre>
+            
+            <h2>Візуалізації</h2>
             <div class="chart">
-                <h3>K-Means Clustering</h3>
+                <h3>K-Means Кластеризація</h3>
                 <img src="kmeans_map.png" alt="K-Means">
             </div>
-            
             <div class="chart">
-                <h3>DBSCAN Hub Identification</h3>
+                <h3>DBSCAN (Транспортні вузли)</h3>
                 <img src="dbscan_map.png" alt="DBSCAN">
             </div>
-            
             <div class="chart">
-                <h3>Top Streets</h3>
+                <h3>ТОП-10 Вулиць</h3>
                 <img src="streets_bar.png" alt="Streets">
             </div>
-
             <div class="chart">
-                <h3>Settlement Distribution</h3>
+                <h3>Розподіл за населеними пунктами</h3>
                 <img src="cities_bar.png" alt="Settlements">
             </div>
         </div>
@@ -120,7 +143,7 @@ def visualize_all():
     with open(f'{output_dir}/index.html', 'w', encoding='utf-8') as f:
         f.write(html_content)
     
-    print(f"Visualization complete. Results saved to {output_dir}")
+    print(f"Візуалізацію завершено. Артефакти збережено у {output_dir}")
 
 if __name__ == "__main__":
     visualize_all()
