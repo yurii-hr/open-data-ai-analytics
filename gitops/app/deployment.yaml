@@ -4,7 +4,7 @@ metadata:
   name: transit-web-deployment
   namespace: transit-analytics
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: transit-web
