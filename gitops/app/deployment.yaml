@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transit-web-deployment
+  namespace: transit-analytics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: transit-web
+  template:
+    metadata:
+      labels:
+        app: transit-web
+    spec:
+      containers:
+      - name: transit-web
+        image: yurii12345678/transit_web:v1
+        ports:
+        - containerPort: 8000
